@@ -1,10 +1,16 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
+using Neurotic;
 
-namespace neurotic-net.Factory
+namespace Neurotic.Factory
 {
-    class ConvolutionNetworkFactory
-{
-}
+    public interface INeuralInterfaceFactory{
+        void Construct(INeuralInterface network, ICollection<IPipe> inp, ICollection<IPipe> outp);
+    }
+
+    public class ConvolutionNetworkFactory : INeuralInterfaceFactory
+    {
+        
+    }
 }
