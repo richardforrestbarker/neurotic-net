@@ -4,7 +4,7 @@ namespace Neurotic
 {
     public abstract class Neuron : INeuralInterface
     {
-        private ICollection<IPipe> inputs, outputs;
+        public ICollection<IPipe> inputs,outputs;
 
         public Neuron(ICollection<IPipe> inp, ICollection<IPipe> outp)
         {

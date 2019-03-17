@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿
+using System.Collections.Generic;
 
 namespace Neurotic
 {
@@ -9,6 +9,6 @@ namespace Neurotic
         ICollection<IPipe> getInPipes();
         ICollection<IPipe> getOutPipes();
         void setInPipes(ICollection<IPipe> inPipes);
-        void setOutPipes(ICollection<IPipe> outPipes);
+        void setOutPipes(ICollection<IPipe> outPipe);
     }
 }
