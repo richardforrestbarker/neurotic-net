@@ -20,12 +20,13 @@ namespace Neurotic.Factory
             if (interconectivity > 1 || interconectivity < 0) throw new ArgumentOutOfRangeException(nameof(interconectivity), "Should be in range 0 to 1 inclusive.");
             if (layerCount <= 0) throw new ArgumentOutOfRangeException(nameof(layerCount), "Should be greater than 0.");
             if (cellCount <= 0) throw new ArgumentOutOfRangeException(nameof(cellCount), "Should be greater than 0.");
-            layers = layerCount;
+            layers =layerCount;
             cells = cellCount;
             this.interconectivity = interconectivity;
         }
         public INeuralInterface Construct(ICollection<IPipe> inp, ICollection<IPipe> outp)
         {
+            ConnectionsPerNeuron = (int)Math.Floor(outp.Count * interconectivity);// the number of neurons each cell connects to in the previoyus layer
             ConvolutionNeuralNetwork net;
             LinkedList<INeuralInterface> layersMade = new LinkedList<INeuralInterface>();
             for (int l = 0; l < layers; l++)
@@ -39,62 +40,25 @@ namespace Neurotic.Factory
         private LinkedList<INeuralInterface> CreateNewCells(ICollection<IPipe> inp, ICollection<IPipe> outp)
         {
             LinkedList<INeuralInterface> neurons = new LinkedList<INeuralInterface>();
-            var connectionsPerNeuron = Math.Floor(outp.Count * interconectivity);// the number of neurons each cell connects to in the previoyus layer
-            for (int c = 0; c < cells; c++)
-            {
-                neurons.AddLast(new ConvolutionNeuron(null, null));
-            }
-            for (int c = 0; c < cells; c++)
-            {
-                ICollection<IPipe> i = inp, o = outp;
-                var n = neurons.ElementAt(c);
-                //wrap connections arround
-                if (c == cells - 1)
-                {
-                    //last cell in the layer
-                    var start = c - (int)Math.Floor(connectionsPerNeuron / 2);
-                    var end = 0 + (int)Math.Floor(connectionsPerNeuron / 2);
-                    i = inp.Skip(start).Concat(i.Take(end)).ToArray();
-                }
-                else if (c == 0)
-                {
-                    var newI = inp.Take((int)Math.Floor(connectionsPerNeuron / 2)).Concat(inp.Skip(cells - (int)Math.Floor(connectionsPerNeuron / 2)));
-                    i = newI.ToArray();
-                    o = new List<IPipe>();
-                    o.Add(new IPipe());
-                }
-                else
-                {
-                    var start = c - (int)Math.Floor(connectionsPerNeuron / 2);
-                    var newI = inp.Skip(start);
-                    var end = c + (int)Math.Floor(connectionsPerNeuron / 2);
-                    if (end > cells)
-                    {
-                        // going past the end, wrap around
-                        newI = newI.Concat(inp.Take(end - cells));
-                    }
-                    else
-                    {
-                        newI = newI.Take((int)connectionsPerNeuron);
-                    }
-                    i = newI.ToArray();
-                    o = new List<IPipe>();
-                    o.Add(new IPipe());
-                }
-                n.setInPipes(i);
-                n.setOutPipes(o);
-                neurons.AddLast(n);
-            }
+
+            neurons.Fill(() => new ConvolutionNeuron(inp, outp), cells);
             return neurons;
+        }
+        private double ConnectionsPerNeuron { get; set; }
+        private void ConnectNeurons(INeuralInterface input, INeuralInterface output)
+        {
+            output.setInPipes(input.getOutPipes());
         }
 
         private INeuralInterface NextLayer(int l, INeuralInterface previousLayer, ICollection<IPipe> inp, ICollection<IPipe> outp)
         {
 
             LinkedList<INeuralInterface> neurons;
+            var o = new List<IPipe>();
+            o.Fill((i) => new IPipe(), 1, (i, p) => p.SetValue(l));
             if (l == 0)
-            {
-                neurons = CreateNewCells(inp, new List<IPipe>());
+            {  
+                neurons = CreateNewCells(inp, o);
             }
             else if (l == layers - 1)
             {
@@ -102,7 +66,8 @@ namespace Neurotic.Factory
             }
             else
             {
-                neurons = CreateNewCells(previousLayer.getOutPipes(), new List<IPipe>());
+                o.Fill((i) => new IPipe(), 1, (i, p) => p.SetValue(l));
+                neurons = CreateNewCells(previousLayer.getOutPipes(), o);
             }
 
             return new ConvolutionNeuralLayer(neurons);

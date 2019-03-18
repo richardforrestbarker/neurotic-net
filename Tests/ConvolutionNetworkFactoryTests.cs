@@ -19,8 +19,8 @@ namespace Tests
         {
             factory = new ConvolutionNetworkFactory(.5, 20, 5);
             inps = new List<IPipe>();
-            inps.Fill(() => new IPipe(), 5);
-            outps.Fill(() => new IPipe(), 5);
+            inps.Fill((i) => new IPipe(), 5, (i,p) => p.SetValue(i));
+            outps.Fill((i) => new IPipe(), 5, (i, p) => p.SetValue(i));
         }
         [Test]
         public void FactoryConstructsWithNoNullNeurons()
