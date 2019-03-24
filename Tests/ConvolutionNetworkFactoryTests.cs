@@ -17,7 +17,7 @@ namespace Tests
         [SetUp]
         public void Setup()
         {
-            factory = new ConvolutionNetworkFactory(.5, 20, 5);
+            factory = new ConvolutionNetworkFactory(.5, 19, 5);
             inps = new List<IPipe>();
             inps.Fill((i) => new IPipe(), 5, (i,p) => p.SetValue(i));
             outps.Fill((i) => new IPipe(), 5, (i, p) => p.SetValue(i));

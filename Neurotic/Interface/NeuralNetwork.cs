@@ -4,15 +4,14 @@ using System.Linq;
 
 namespace Neurotic
 {
-    public abstract class NeuralNetwork : INeuralInterface
+    public abstract class NeuralNetwork : LinkedList<INeuralInterface>, INeuralInterface
     {
-        public readonly ICollection<INeuralInterface> layers;
-        public NeuralNetwork(ICollection<INeuralInterface> layers) => this.layers = layers;
-        public void Calculate()=>Array.ForEach(layers.ToArray(), n => n.Calculate());
-        public ICollection<IPipe> getInPipes()=>  layers.First().getInPipes();
-        public ICollection<IPipe> getOutPipes()=>  layers.Last().getOutPipes();
-        public void setInPipes(ICollection<IPipe> inPipes)=>  layers.First().setInPipes(inPipes);
-        public void setOutPipes(ICollection<IPipe> outPipes) => layers.Last().setOutPipes(outPipes);
+        public NeuralNetwork(ICollection<INeuralInterface> layers) : base(layers) { }
+        public void Calculate()=>Array.ForEach(this.ToArray(), n => n.Calculate());
+        public ICollection<IPipe> getInPipes()=> First.Value.getInPipes();
+        public ICollection<IPipe> getOutPipes()=> Last.Value.getOutPipes();
+        public void setInPipes(ICollection<IPipe> inPipes)=> First.Value.setInPipes(inPipes);
+        public void setOutPipes(ICollection<IPipe> outPipes) => Last.Value.setOutPipes(outPipes);
         
     }
 }
