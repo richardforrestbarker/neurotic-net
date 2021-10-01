@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,10 +9,10 @@ namespace Neurotic.Factory
 {
     public interface INeuralInterfaceFactory
     {
-        INeuralInterface Construct(ICollection<IPipe> inp, ICollection<IPipe> outp);
+        INeuralCalculator Construct(ICollection<IPipe> inp, ICollection<IPipe> outp);
     }
 
-    public class ConvolutionNetworkFactory : INeuralInterfaceFactory
+    public partial class ConvolutionNetworkFactory : INeuralInterfaceFactory
     {
         private int layers, cells;
         private double interconectivity;
@@ -24,14 +25,15 @@ namespace Neurotic.Factory
             cells = cellCount;
             this.interconectivity = interconectivity;
         }
-        public INeuralInterface Construct(ICollection<IPipe> inp, ICollection<IPipe> outp)
+        public ConvolutionNeuralNetwork Construct(ICollection<IPipe> inp, ICollection<IPipe> outp)
         {
-            ConnectionsPerNeuron = (int)Math.Floor(cells * interconectivity);// the number of neurons each cell connects to in the previoyus layer
+            ConnectionsPerNeuron = (int)Math.Floor(cells * interconectivity);// the number of neurons each cell connects to in the prevoyus layer
             ConvolutionNeuralNetwork net = new ConvolutionNeuralNetwork();
             for (int l = 0; l < layers; l++)
             {
                 var layer = new ConvolutionNeuralLayer();
-                layer.Fill(() => new ConvolutionNeuron(null, new IPipe[] { new IPipe() }), cells);
+                var inputs = new IPipe[] { new IPipe() };
+                layer.Fill(() => new ConvolutionNeuron(inputs, new IPipe()), cells);
                 if (l == 0)
                 {
                     ConnectPipesToLayersInputs(inp, layer);
@@ -42,7 +44,7 @@ namespace Neurotic.Factory
                 }
                 else
                 {
-                    ConnectPipesToLayersInputs(net.ElementAt(l - 1).getOutPipes(), layer);
+                    ConnectPipesToLayersInputs(net.ElementAt(l - 1).getOutput(), layer);
                 }
                 net.AddLast(layer);
             }
@@ -57,7 +59,7 @@ namespace Neurotic.Factory
 
             for (var index = 0; index < layer.Count; index++)
             {
-                layer.ElementAt(index).setInPipes(inp.OffsetCenteredWrappedSubset(index, ConnectionsPerNeuron));
+                layer.ElementAt(index).setInput(inp.OffsetCenteredWrappedSubset(index, ConnectionsPerNeuron));
             }
         }
 
@@ -66,32 +68,15 @@ namespace Neurotic.Factory
 
             for (var index = 0; index < layer.Count; index++)
             {
-                layer.ElementAt(index).setOutPipes(inp.OffsetCenteredWrappedSubset(index, ConnectionsPerNeuron));
+                layer.ElementAt(index).setOutput(inp.OffsetCenteredWrappedSubset(index, ConnectionsPerNeuron).First());
             }
+        }
+
+        INeuralCalculator INeuralInterfaceFactory.Construct(ICollection<IPipe> inp, ICollection<IPipe> outp)
+        {
+            return Construct(inp, outp);
         }
 
         private int ConnectionsPerNeuron { get; set; }
-
-      
-        private class ConvolutionNeuron : Neuron
-        {
-            public ConvolutionNeuron() : base(new List<IPipe>(), new List<IPipe>()) { }
-            public ConvolutionNeuron(ICollection<IPipe> inp, ICollection<IPipe> outp) : base(inp, outp) { }
-            public override void Calculate()
-            {
-                //get values from in pipes, and write result to all outpipes.
-                throw new NotImplementedException();
-            }
-        }
-        private class ConvolutionNeuralLayer : NeuralLayer
-        {
-            public ConvolutionNeuralLayer() : base(new LinkedList<INeuralInterface>()) { }
-            public ConvolutionNeuralLayer(ICollection<INeuralInterface> neurons) : base(neurons) { }
-        }
-        private class ConvolutionNeuralNetwork : NeuralNetwork
-        {
-            public ConvolutionNeuralNetwork() : base(new LinkedList<INeuralInterface>()) { }
-            public ConvolutionNeuralNetwork(ICollection<INeuralInterface> layers) : base(layers) { }
-        }
     }
 }

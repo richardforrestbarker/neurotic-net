@@ -16,7 +16,7 @@ namespace Tests
         {
             var i = 0;
             list = new List<int>();
-            list.Fill(() => i++, 50);
+            list.Fill(() => i++, fillCount + 1);
         }
         [Test]
         public void Fill()
@@ -60,25 +60,25 @@ namespace Tests
         }
 
         [Test]
-        public void OffsetCenteredWrappedSubsetWrapsWhenCountExceedsLength()
+        public void OffsetCenteredWrappedSubsetWrapsWhenCountPassesEndOfTheCollection()
         {
             var count = 5;
             var wrappedStart = list.OffsetCenteredWrappedSubset(1, count);
             Assert.That(wrappedStart.Length == count);
-            Assert.That(wrappedStart[0] == 49);
-            Assert.That(wrappedStart[1] == 0);
-            Assert.That(wrappedStart[2] == 1);
-            Assert.That(wrappedStart[3] == 2);
-            Assert.That(wrappedStart[4] == 3);
+            Assert.That(wrappedStart[0] == list[49]);
+            Assert.That(wrappedStart[1] == list[0]);
+            Assert.That(wrappedStart[2] == list[1]);
+            Assert.That(wrappedStart[3] == list[2]);
+            Assert.That(wrappedStart[4] == list[3]);
 
 
             var wrappedEnd = list.OffsetCenteredWrappedSubset(fillCount - 1, count);
             Assert.That(wrappedEnd.Length == count);
-            Assert.That(wrappedEnd[0] == 47);
-            Assert.That(wrappedEnd[1] == 48);
-            Assert.That(wrappedEnd[2] == 49);
-            Assert.That(wrappedEnd[3] == 0);
-            Assert.That(wrappedEnd[4] == 1);
+            Assert.That(wrappedEnd[0] == list[47]);
+            Assert.That(wrappedEnd[1] == list[48]);
+            Assert.That(wrappedEnd[2] == list[49]);
+            Assert.That(wrappedEnd[3] == list[0]);
+            Assert.That(wrappedEnd[4] == list[1]);
         }
         
             
