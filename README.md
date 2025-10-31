@@ -3,6 +3,8 @@ neurotic-net
 
 A lightweight, extensible foundation for building neural networks in a purely interface-based style. neurotic-net exposes small composable interfaces for Networks, Neurons, Pipes, Trainers and Testers so you can mix-and-match implementations, chain and group models, and create novel connection topologies without being forced into a monolithic class hierarchy.
 
+the application is written in C#. It is broken into three projects: Core, Test, and Example. The Core project is a class library that contains all of the interfaces, various and implementations. Test contains the unit tests that validate the Core. The examples project contains various examples of networks, their uses, and test/training results on various problems. 
+
 Key ideas
 - Interface-first design: every element — networks, neurons, layers — implements simple interfaces so they can be composed, swapped, and tested independently.
 - Explicit data flow: values travel through IPipe objects; networks and neurons control how they read inputs and write outputs.
