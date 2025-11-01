@@ -60,7 +60,7 @@ jobs:
             COMMENT_HEADER="## ❌ Build Failed"
             OUTPUT_FILE="build-output.txt"
           elif [ -n "$TEST_EXIT" ] && [ "$TEST_EXIT" != "0" ]; then
-            # Build succeeded but tests failed
+            # Build succeeded but tests failed (TEST_EXIT is only set if tests ran)
             COMMENT_HEADER="## ⚠️ Tests Failed"
             OUTPUT_FILE="test-output.txt"
           else
@@ -125,6 +125,7 @@ jobs:
             echo "Build failed"
             exit 1
           fi
+          # Only check test exit code if it's set (tests ran)
           if [ -n "$TEST_EXIT" ] && [ "$TEST_EXIT" != "0" ]; then
             echo "Tests failed"
             exit 1
