@@ -116,7 +116,7 @@ namespace Neurotic.Benchmarks
                 }
                 
                 // One-hot encoded output
-                int subject = i % 10;
+                int subject = i % settings.OutputCount;
                 outputData[subject] = 1.0;
                 
                 trainingData.Add(new TrainingData(inputData, outputData));

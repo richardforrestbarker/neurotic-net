@@ -119,7 +119,7 @@ namespace Neurotic.Benchmarks
                 }
                 
                 // One-hot encoded output
-                int digit = i % 10;
+                int digit = i % settings.OutputCount;
                 outputData[digit] = 1.0;
                 
                 trainingData.Add(new TrainingData(inputData, outputData));
