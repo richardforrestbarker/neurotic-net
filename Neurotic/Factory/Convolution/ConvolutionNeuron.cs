@@ -57,7 +57,7 @@ namespace Neurotic.Factory
             inp.Clear();
             foreach (var pipe in inPipes)
             {
-                inp[pipe] = null; // Will need to set biases later
+                inp[pipe] = new PassthroughBias(); // Default to passthrough bias
             }
         }
 

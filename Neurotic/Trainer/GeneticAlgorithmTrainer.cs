@@ -6,6 +6,15 @@ using Neurotic.Factory;
 namespace Neurotic.Trainer
 {
     /// <summary>
+    /// Represents a network and its fitness score for the genetic algorithm
+    /// </summary>
+    internal class NetworkFitness
+    {
+        public ConvolutionNeuralNetwork Network { get; set; }
+        public double Fitness { get; set; }
+    }
+
+    /// <summary>
     /// Genetic Algorithm trainer that evolves neural networks by modifying:
     /// - Neuron connections (which pipes connect to which neurons)
     /// - Bias functions (input and output biases)
@@ -50,7 +59,7 @@ namespace Neurotic.Trainer
             for (int generation = 0; generation < iterations; generation++)
             {
                 // Evaluate fitness for all individuals
-                var fitnessScores = population.Select(net => new
+                var fitnessScores = population.Select(net => new NetworkFitness
                 {
                     Network = net,
                     Fitness = GetFitness(net, trainingData)
@@ -140,20 +149,18 @@ namespace Neurotic.Trainer
             return population;
         }
 
-        private ConvolutionNeuralNetwork SelectParent<T>(List<T> fitnessScores) where T : class
+        private ConvolutionNeuralNetwork SelectParent(List<NetworkFitness> fitnessScores)
         {
             // Tournament selection
             int tournamentSize = 3;
-            var tournament = new List<T>();
+            var tournament = new List<NetworkFitness>();
             
             for (int i = 0; i < tournamentSize; i++)
             {
                 tournament.Add(fitnessScores[random.Next(fitnessScores.Count)]);
             }
             
-            // Use dynamic to access the anonymous type properties
-            dynamic best = tournament.OrderBy(x => ((dynamic)x).Fitness).First();
-            return best.Network;
+            return tournament.OrderBy(x => x.Fitness).First().Network;
         }
 
         private ConvolutionNeuralNetwork Crossover(ConvolutionNeuralNetwork parent1, ConvolutionNeuralNetwork parent2)
@@ -295,13 +302,23 @@ namespace Neurotic.Trainer
                 
                 for (int n = 0; n < Math.Min(sourceNeurons.Length, targetNeurons.Length); n++)
                 {
+                    // Copy output bias
                     targetNeurons[n].setOutputBias(sourceNeurons[n].getOutputBias());
                     
-                    // Copy input biases
+                    // Copy input biases with same pipe references
                     var inputs = new Dictionary<IPipe, IBias>();
+                    var sourceInputs = sourceNeurons[n].getInputWithBiases();
                     foreach (var pipe in targetNeurons[n].getInput())
                     {
-                        inputs[pipe] = new PassthroughBias(); // Default
+                        // Try to find matching bias from source, otherwise use passthrough
+                        if (sourceInputs.ContainsKey(pipe))
+                        {
+                            inputs[pipe] = sourceInputs[pipe];
+                        }
+                        else
+                        {
+                            inputs[pipe] = new PassthroughBias();
+                        }
                     }
                     targetNeurons[n].setInputWithBiases(inputs);
                 }
