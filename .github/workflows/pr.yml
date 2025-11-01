@@ -1,0 +1,119 @@
+name: PR Build and Test
+
+on:
+  pull_request:
+    types: [ready_for_review]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      pull-requests: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Build
+        id: build
+        continue-on-error: true
+        run: |
+          set +e
+          dotnet build 2>&1 | tee build-output.txt
+          BUILD_EXIT_CODE=${PIPESTATUS[0]}
+          echo "exit_code=$BUILD_EXIT_CODE" >> $GITHUB_OUTPUT
+          exit $BUILD_EXIT_CODE
+      
+      - name: Test
+        id: test
+        if: steps.build.outputs.exit_code == '0'
+        continue-on-error: true
+        run: |
+          set +e
+          dotnet test 2>&1 | tee test-output.txt
+          TEST_EXIT_CODE=${PIPESTATUS[0]}
+          echo "exit_code=$TEST_EXIT_CODE" >> $GITHUB_OUTPUT
+          exit $TEST_EXIT_CODE
+      
+      - name: Prepare comment
+        id: prepare-comment
+        if: always()
+        run: |
+          # GitHub PR comments have a limit of ~65536 characters
+          MAX_LENGTH=60000
+          
+          if [ "${{ steps.build.outputs.exit_code }}" != "0" ]; then
+            # Build failed
+            COMMENT_HEADER="## ❌ Build Failed"
+            OUTPUT_FILE="build-output.txt"
+          elif [ "${{ steps.test.outputs.exit_code }}" != "0" ]; then
+            # Build succeeded but tests failed
+            COMMENT_HEADER="## ⚠️ Tests Failed"
+            OUTPUT_FILE="test-output.txt"
+          else
+            # Both build and tests succeeded
+            COMMENT_HEADER="## ✅ Build and Tests Passed"
+            OUTPUT_FILE="test-output.txt"
+          fi
+          
+          # Read the output file
+          if [ -f "$OUTPUT_FILE" ]; then
+            OUTPUT=$(cat "$OUTPUT_FILE")
+            OUTPUT_LENGTH=${#OUTPUT}
+            
+            if [ $OUTPUT_LENGTH -gt $MAX_LENGTH ]; then
+              # Truncate to last MAX_LENGTH characters
+              OUTPUT="${OUTPUT: -$MAX_LENGTH}"
+              TRUNCATION_NOTE="*Note: Output was truncated to fit within comment size limits. Showing last ${MAX_LENGTH} characters.*"$'\n\n'
+            else
+              TRUNCATION_NOTE=""
+            fi
+          else
+            OUTPUT="No output file found."
+            TRUNCATION_NOTE=""
+          fi
+          
+          # Create comment body
+          {
+            echo "comment<<EOF"
+            echo "$COMMENT_HEADER"
+            echo ""
+            echo "$TRUNCATION_NOTE"
+            echo '```'
+            echo "$OUTPUT"
+            echo '```'
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+      
+      - name: Post comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = `${{ steps.prepare-comment.outputs.comment }}`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+      
+      - name: Fail if build or test failed
+        if: always()
+        run: |
+          if [ "${{ steps.build.outputs.exit_code }}" != "0" ]; then
+            echo "Build failed"
+            exit 1
+          fi
+          if [ "${{ steps.test.outputs.exit_code }}" != "0" ]; then
+            echo "Tests failed"
+            exit 1
+          fi
