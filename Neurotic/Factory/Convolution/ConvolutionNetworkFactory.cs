@@ -32,7 +32,8 @@ namespace Neurotic.Factory
             for (int l = 0; l < layers; l++)
             {
                 var layer = new ConvolutionNeuralLayer();
-                var inputs = new IPipe[] { new IPipe() };
+                var inputs = new Dictionary<IPipe, IBias>();
+                inputs[new IPipe()] = new PassthroughBias();
                 layer.Fill(() => new ConvolutionNeuron(inputs, new IPipe()), cells);
                 if (l == 0)
                 {
@@ -59,7 +60,13 @@ namespace Neurotic.Factory
 
             for (var index = 0; index < layer.Count; index++)
             {
-                layer.ElementAt(index).setInput(inp.OffsetCenteredWrappedSubset(index, ConnectionsPerNeuron));
+                var inputPipes = inp.OffsetCenteredWrappedSubset(index, ConnectionsPerNeuron);
+                var inputDict = new Dictionary<IPipe, IBias>();
+                foreach (var pipe in inputPipes)
+                {
+                    inputDict[pipe] = new PassthroughBias(); // Default to passthrough
+                }
+                layer.ElementAt(index).setInputWithBiases(inputDict);
             }
         }
 
