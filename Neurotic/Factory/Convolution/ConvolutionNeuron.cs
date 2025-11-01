@@ -5,33 +5,41 @@ namespace Neurotic.Factory
 
     public class ConvolutionNeuron : INeuralInterfaceInputAggregate
     {
-        private ICollection<IPipe> inp;
+        private Dictionary<IPipe, IBias> inp;
         private IPipe outp;
+        private IBias outpBias;
 
-        public ConvolutionNeuron() : this(new List<IPipe>(), new IPipe()) { }
-        public ConvolutionNeuron(ICollection<IPipe> inp, IPipe outp)
+        public ConvolutionNeuron() : this(new Dictionary<IPipe, IBias>(), new IPipe(), new PassthroughBias()) { }
+        public ConvolutionNeuron(Dictionary<IPipe, IBias> inp, IPipe outp) : this(inp, outp, new PassthroughBias()) { }
+        public ConvolutionNeuron(Dictionary<IPipe, IBias> inp, IPipe outp, IBias outputBias)
         {
             this.inp = inp;
             this.outp = outp;
+            this.outpBias = outputBias ?? new PassthroughBias();
         }
         public void Calculate()
         {
             //get values from in pipes, and write result to all outpipes.
-            float result = 0;
-            Queue<IPipe> inputs = new Queue<IPipe>(inp);
-            IPipe current;
-            while (inputs.TryDequeue(out current))
+            double result = 0;
+            foreach (var entry in inp)
             {
-                float weight = current.GetWeightBais().Item1;
-                float bias = current.GetWeightBais().Item2;
-                result += (current.GetValue() + bias) * weight;
+                IPipe pipe = entry.Key;
+                IBias bias = entry.Value;
+                result += bias.Bias(pipe.GetValue(), this);
             }
+            // Apply output bias before setting the value
+            result = outpBias.Bias(result, this);
             outp.SetValue(result);
         }
 
         public ICollection<IPipe> getInput()
         {
-            return inp;
+            return inp.Keys;
+        }
+
+        public Dictionary<IPipe, IBias> getInputWithBiases()
+        {
+            return new Dictionary<IPipe, IBias>(inp);
         }
 
         public IPipe getOutput()
@@ -39,14 +47,33 @@ namespace Neurotic.Factory
             return outp;
         }
 
+        public IBias getOutputBias()
+        {
+            return outpBias;
+        }
+
         public void setInput(ICollection<IPipe> inPipes)
         {
-            inp = inPipes;
+            inp.Clear();
+            foreach (var pipe in inPipes)
+            {
+                inp[pipe] = new PassthroughBias(); // Default to passthrough bias
+            }
+        }
+
+        public void setInputWithBiases(Dictionary<IPipe, IBias> inputsWithBiases)
+        {
+            inp = inputsWithBiases;
         }
 
         public void setOutput(IPipe outPipe)
         {
             outp = outPipe;
+        }
+
+        public void setOutputBias(IBias bias)
+        {
+            outpBias = bias ?? new PassthroughBias();
         }
     }
 }
