@@ -1,0 +1,63 @@
+name: FERET Face Recognition Benchmark
+
+# This workflow is manually triggered only - it will not run automatically
+on:
+  workflow_dispatch:
+    inputs:
+      training_iterations:
+        description: 'Number of training iterations'
+        required: false
+        default: '10'
+        type: string
+
+jobs:
+  feret-benchmark:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Download FERET dataset
+        run: |
+          echo "Setting up FERET face dataset directory..."
+          mkdir -p ./data/feret
+          
+          # Note: FERET dataset requires special access and is not freely downloadable
+          # The dataset is available from NIST: https://www.nist.gov/itl/products-and-services/color-feret-database
+          # For benchmarking purposes, we create a placeholder structure
+          
+          echo "FERET data directory created"
+          echo "Note: FERET dataset requires special access from NIST"
+          echo "Visit: https://www.nist.gov/itl/products-and-services/color-feret-database"
+          echo "For benchmark testing, synthetic data will be used"
+          
+          # Create a placeholder file
+          echo "FERET dataset placeholder - requires NIST access for real data" > ./data/feret/README.txt
+          ls -lh ./data/feret/
+      
+      - name: Build
+        run: dotnet build
+      
+      - name: Run FERET Benchmark Tests
+        run: |
+          echo "Running FERET face recognition benchmark tests..."
+          echo "Note: Tests use synthetic data for demonstration"
+          dotnet test --filter FullyQualifiedName~FERETBenchmark --logger "console;verbosity=detailed"
+      
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: feret-benchmark-results
+          path: |
+            ./data/feret/
+            **/TestResults/

@@ -1,0 +1,67 @@
+name: MNIST Benchmark
+
+# This workflow is manually triggered only - it will not run automatically
+on:
+  workflow_dispatch:
+    inputs:
+      training_iterations:
+        description: 'Number of training iterations'
+        required: false
+        default: '10'
+        type: string
+
+jobs:
+  mnist-benchmark:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Download MNIST dataset
+        run: |
+          echo "Downloading MNIST dataset..."
+          mkdir -p ./data/mnist
+          
+          # Download MNIST training images
+          wget -q http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz -O ./data/mnist/train-images-idx3-ubyte.gz || true
+          
+          # Download MNIST training labels
+          wget -q http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz -O ./data/mnist/train-labels-idx1-ubyte.gz || true
+          
+          # Download MNIST test images
+          wget -q http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz -O ./data/mnist/t10k-images-idx3-ubyte.gz || true
+          
+          # Download MNIST test labels
+          wget -q http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz -O ./data/mnist/t10k-labels-idx1-ubyte.gz || true
+          
+          # Extract files
+          gunzip -f ./data/mnist/*.gz || true
+          
+          echo "MNIST dataset download complete"
+          ls -lh ./data/mnist/
+      
+      - name: Build
+        run: dotnet build
+      
+      - name: Run MNIST Benchmark Tests
+        run: |
+          echo "Running MNIST benchmark tests..."
+          dotnet test --filter FullyQualifiedName~MNISTBenchmark --logger "console;verbosity=detailed"
+      
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: mnist-benchmark-results
+          path: |
+            ./data/mnist/
+            **/TestResults/

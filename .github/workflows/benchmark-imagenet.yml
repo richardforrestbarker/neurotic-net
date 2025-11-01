@@ -1,0 +1,68 @@
+name: ImageNet Benchmark
+
+# This workflow is manually triggered only - it will not run automatically
+on:
+  workflow_dispatch:
+    inputs:
+      training_iterations:
+        description: 'Number of training iterations'
+        required: false
+        default: '5'
+        type: string
+      sample_count:
+        description: 'Number of samples to use from dataset'
+        required: false
+        default: '100'
+        type: string
+
+jobs:
+  imagenet-benchmark:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Download ImageNet sample data
+        run: |
+          echo "Setting up ImageNet sample data directory..."
+          mkdir -p ./data/imagenet
+          
+          # Note: Full ImageNet dataset requires registration and download from official source
+          # For benchmarking purposes, we create a placeholder structure
+          # In production, you would download actual ImageNet data from:
+          # https://image-net.org/download.php
+          
+          echo "ImageNet data directory created"
+          echo "Note: Full ImageNet dataset should be downloaded manually from https://image-net.org/"
+          echo "For benchmark testing, synthetic data will be used"
+          
+          # Create a placeholder file to indicate data directory is ready
+          echo "placeholder" > ./data/imagenet/README.txt
+          ls -lh ./data/imagenet/
+      
+      - name: Build
+        run: dotnet build
+      
+      - name: Run ImageNet Benchmark Tests
+        run: |
+          echo "Running ImageNet benchmark tests..."
+          echo "Note: Tests use synthetic data for demonstration"
+          dotnet test --filter FullyQualifiedName~ImageNetBenchmark --logger "console;verbosity=detailed"
+      
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: imagenet-benchmark-results
+          path: |
+            ./data/imagenet/
+            **/TestResults/

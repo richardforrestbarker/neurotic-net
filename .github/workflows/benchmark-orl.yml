@@ -1,0 +1,69 @@
+name: ORL Face Recognition Benchmark
+
+# This workflow is manually triggered only - it will not run automatically
+on:
+  workflow_dispatch:
+    inputs:
+      training_iterations:
+        description: 'Number of training iterations'
+        required: false
+        default: '10'
+        type: string
+
+jobs:
+  orl-benchmark:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Download ORL (AT&T) face dataset
+        run: |
+          echo "Downloading ORL (AT&T) face dataset..."
+          mkdir -p ./data/orl
+          
+          # Download ORL face database (publicly available)
+          wget -q https://cam-orl.co.uk/facedatabase.html -O ./data/orl/info.html || \
+          wget -q https://www.cl.cam.ac.uk/research/dtg/attarchive/pub/data/att_faces.zip -O ./data/orl/att_faces.zip || \
+          echo "Note: ORL dataset download failed - using placeholder"
+          
+          # Try to extract if download succeeded
+          if [ -f ./data/orl/att_faces.zip ]; then
+            unzip -q ./data/orl/att_faces.zip -d ./data/orl/ || true
+            echo "ORL dataset extracted"
+          else
+            echo "ORL dataset download unavailable - synthetic data will be used for testing"
+          fi
+          
+          # Create README
+          echo "ORL (AT&T) Face Database" > ./data/orl/README.txt
+          echo "40 subjects, 10 images per subject" >> ./data/orl/README.txt
+          echo "112x92 grayscale images" >> ./data/orl/README.txt
+          
+          ls -lh ./data/orl/
+      
+      - name: Build
+        run: dotnet build
+      
+      - name: Run ORL Benchmark Tests
+        run: |
+          echo "Running ORL face recognition benchmark tests..."
+          dotnet test --filter FullyQualifiedName~ORLBenchmark --logger "console;verbosity=detailed"
+      
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: orl-benchmark-results
+          path: |
+            ./data/orl/
+            **/TestResults/
