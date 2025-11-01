@@ -37,6 +37,11 @@ namespace Neurotic.Factory
             return inp.Keys;
         }
 
+        public Dictionary<IPipe, IBias> getInputWithBiases()
+        {
+            return new Dictionary<IPipe, IBias>(inp);
+        }
+
         public IPipe getOutput()
         {
             return outp;
